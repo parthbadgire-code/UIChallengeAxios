@@ -107,10 +107,6 @@ Submit your assignment using the following Google Form link:
 
 ### What to Upload
 
-Upload **one of the following**:
-
-- A ZIP of your project folder  
-    **OR**
 - A text file containing the link to your forked GitHub repository
 
 Make sure your **name is clearly mentioned**.
