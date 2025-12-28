@@ -6,143 +6,209 @@ struct ContentView: View {
     }
 }
 
+// MARK: - Profile Setup View
 struct ProfileSetupView: View {
 
+    // MARK: - State
     @State private var name: String = ""
     @State private var age: String = ""
     @State private var isVerified: Bool = false
     @State private var showDetails: Bool = false
 
+    // MARK: - Focus State
+    @FocusState private var focusedField: Field?
+
+    enum Field {
+        case name
+        case age
+    }
+
+    // MARK: - Computed Properties
     var greetingText: String {
-        if name.isEmpty {
-            return "Welcome!!"
-        } else {
-            return "Welcome, \(name)"
-        }
+        name.isEmpty ? "Welcome!!" : "Welcome, \(name)"
     }
 
     var ageValue: Int? {
         Int(age)
     }
 
+    var completionProgress: Double {
+        var progress = 0.0
+        if !name.isEmpty { progress += 0.33 }
+        if !age.isEmpty { progress += 0.33 }
+        if isVerified { progress += 0.34 }
+        return progress
+    }
+
     // MARK: - Body
     var body: some View {
-        NavigationView {
-            VStack(spacing: 24) {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 24) {
 
-                VStack(spacing: 8) {
-                    Text(greetingText)
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .foregroundColor(.black)
+                    // MARK: - Header
+                    VStack(spacing: 8) {
+                        Text(greetingText)
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                            .foregroundColor(Color(.label))
+                            .animation(.easeInOut, value: greetingText)
 
-                    Text("Complete your profile to continue")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
-                        .multilineTextAlignment(.center)
-                }
-                .padding(.top, 20)
+                        Text("Complete your profile to continue")
+                            .font(.subheadline)
+                            .foregroundColor(Color(.secondaryLabel))
+                    }
 
-                ZStack {
-                    Circle()
-                        .fill(Color.gray.opacity(0.2))
-                        .frame(width: 120, height: 120)
+                    // MARK: - Progress
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Profile Completion")
+                            .font(.caption)
+                            .foregroundColor(Color(.secondaryLabel))
 
-                    Image(systemName: "person.fill")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 60, height: 60)
-                        .foregroundColor(.gray)
-                }
+                        ProgressView(value: completionProgress)
+                            .tint(.blue)
+                            .animation(.easeInOut, value: completionProgress)
+                    }
 
-                VStack(alignment: .leading, spacing: 16) {
+                    // MARK: - Avatar
+                    ZStack {
+                        Circle()
+                            .fill(Color(.secondarySystemBackground))
+                            .frame(width: 120, height: 120)
 
-                    Text("Name")
-                        .font(.headline)
+                        Image(systemName: "person.fill")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 60, height: 60)
+                            .foregroundColor(Color(.secondaryLabel))
+                    }
 
-                    TextField("Enter your name", text: $name)
-                        .padding()
-                        .background(Color.white)
-                        .cornerRadius(10)
-                        .shadow(radius: 2)
+                    // MARK: - Input Fields
+                    VStack(spacing: 16) {
 
-                    Text("Age")
-                        .font(.headline)
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Name")
+                                .font(.headline)
 
-                    TextField("Enter your age", text: $age)
-                        .keyboardType(.numberPad)
-                        .padding()
-                        .background(Color.white)
-                        .cornerRadius(10)
-                        .shadow(radius: 2)
-                }
+                            TextField("Enter your name", text: $name)
+                                .submitLabel(.next)
+                                .focused($focusedField, equals: .name)
+                                .onSubmit {
+                                    focusedField = .age
+                                }
+                                .padding()
+                                .background(Color(.secondarySystemBackground))
+                                .cornerRadius(12)
+                        }
 
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Verification Status")
-                            .font(.headline)
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Age")
+                                .font(.headline)
 
-                        if isVerified {
-                            Text("Verified user")
-                                .foregroundColor(.green)
-                                .font(.subheadline)
-                        } else {
-                            Text("Not verified")
-                                .foregroundColor(.red)
-                                .font(.subheadline)
+                            TextField("Enter your age", text: $age)
+                                .keyboardType(.numberPad)
+                                .submitLabel(.done)
+                                .focused($focusedField, equals: .age)
+                                .onSubmit {
+                                    focusedField = nil
+                                }
+                                .padding()
+                                .background(Color(.secondarySystemBackground))
+                                .cornerRadius(12)
                         }
                     }
 
-                    Spacer()
+                    // MARK: - Verification Card
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Verification Status")
+                                .font(.headline)
 
-                    Button(action: toggleVerification) {
-                        Text(isVerified ? "Revoke" : "Verify")
-                            .fontWeight(.semibold)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 10)
-                            .background(Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(10)
+                            Text(isVerified ? "Verified user" : "Not verified")
+                                .font(.subheadline)
+                                .foregroundColor(isVerified ? .green : .red)
+                                .animation(.easeInOut, value: isVerified)
+                        }
+
+                        Spacer()
+
+                        Button {
+                            triggerHaptic(.light)
+                            withAnimation(.spring()) {
+                                isVerified.toggle()
+                            }
+                        } label: {
+                            Text(isVerified ? "Revoke" : "Verify")
+                                .fontWeight(.semibold)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 10)
+                                .background(Color.blue)
+                                .foregroundColor(.white)
+                                .cornerRadius(10)
+                        }
                     }
-                }
-                .padding()
-                .background(Color.gray.opacity(0.1))
-                .cornerRadius(12)
+                    .padding()
+                    .background(Color(.secondarySystemBackground))
+                    .cornerRadius(14)
 
-                Spacer()
+                    Spacer(minLength: 20)
 
-                NavigationLink(
-                    destination: ProfileDetailsView(
-                        name: name,
-                        age: ageValue
-                    ),
-                    isActive: $showDetails
-                ) {
-                    Button(action: {
-                        showDetails = true
-                    }) {
+                    // MARK: - Continue Button
+                    Button {
+                        triggerHaptic(.medium)
+                        withAnimation(.easeInOut) {
+                            showDetails = true
+                        }
+                    } label: {
                         Text("Continue")
                             .font(.headline)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(Color.black)
+                            .background(Color.accentColor)
                             .foregroundColor(.white)
-                            .cornerRadius(14)
+                            .cornerRadius(16)
+                    }
+                    .disabled(completionProgress < 0.66)
+                    .opacity(completionProgress < 0.66 ? 0.6 : 1)
+
+                    NavigationLink(
+                        destination: ProfileDetailsView(name: name, age: ageValue),
+                        isActive: $showDetails
+                    ) {
+                        EmptyView()
+                    }
+                }
+                .padding()
+            }
+            .background(Color(.systemBackground))
+            .navigationTitle("Profile Setup")
+
+            // MARK: - Keyboard Toolbar
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") {
+                        focusedField = nil
                     }
                 }
             }
-            .padding()
-            .background(Color.white)
-            .navigationTitle("Profile Setup")
+
+            // MARK: - Dismiss Keyboard on Tap
+            .onTapGesture {
+                focusedField = nil
+            }
         }
     }
 
-    // MARK: - Functions
-    private func toggleVerification() {
-        isVerified.toggle()
+    // MARK: - Haptic Feedback
+    private func triggerHaptic(_ style: UIImpactFeedbackGenerator.FeedbackStyle) {
+        let generator = UIImpactFeedbackGenerator(style: style)
+        generator.prepare()
+        generator.impactOccurred()
     }
 }
 
+// MARK: - Profile Details View
 struct ProfileDetailsView: View {
 
     let name: String
@@ -150,7 +216,6 @@ struct ProfileDetailsView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-
             Text("Profile Details")
                 .font(.largeTitle)
                 .fontWeight(.bold)
@@ -163,17 +228,18 @@ struct ProfileDetailsView: View {
                     .font(.title3)
             } else {
                 Text("Age not provided")
-                    .foregroundColor(.gray)
+                    .foregroundColor(Color(.secondaryLabel))
             }
 
             Spacer()
         }
         .padding()
+        .background(Color(.systemBackground))
         .navigationTitle("Details")
     }
 }
 
-
 #Preview {
     ContentView()
 }
+
